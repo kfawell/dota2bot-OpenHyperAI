@@ -102,7 +102,13 @@ function NeutralItems:GetRandomEnhancementByTier(tier)
 end
 
 -- Creates a specific item, inserts it into the bot
+-- Items that should never be assigned, mapped to their replacement
+local bannedNeutrals = {
+	['item_pyrrhic_cloak'] = 'item_giant_maul',
+}
+
 function NeutralItems:CreateAndInsert(bot, itemName, tier)
+	itemName = bannedNeutrals[itemName] or itemName
 	if bot:HasRoomForItem(itemName, true, true) then
 		local item = CreateItem(itemName, bot, bot)
 		item:SetPurchaseTime(0)
