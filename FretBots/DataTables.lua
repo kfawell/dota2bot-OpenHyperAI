@@ -16,6 +16,7 @@ local role 			= require('bots.FretBots.RoleUtility')
 local radiantTowers	= dofile('bots.FretBots.RadiantTowers')
 local direTowers	= dofile('bots.FretBots.DireTowers')
 local Localization = require 'bots/FunLib/localization'
+local DotaRunner = require('bots.FretBots.DotaRunner')
 
 -- local debug flags
 local thisDebug = false
@@ -127,6 +128,21 @@ function DataTables:Initialize()
 	end
 
 	Debug:Print('DataTables initialized.')
+
+	-- Notify DotaRunner of hero selections
+	local botHeroes = { radiant = {}, dire = {} }
+	for _, bot in ipairs(AllBots[RADIANT] or {}) do
+		table.insert(botHeroes.radiant, { internalName = bot.stats.internalName, name = bot.stats.name, role = bot.stats.role })
+	end
+	for _, bot in ipairs(AllBots[DIRE] or {}) do
+		table.insert(botHeroes.dire, { internalName = bot.stats.internalName, name = bot.stats.name, role = bot.stats.role })
+	end
+	local humanHeroes = { radiant = {}, dire = {} }
+	for _, human in ipairs(AllHumanPlayers or {}) do
+		local team = (human.stats.team == RADIANT) and 'radiant' or 'dire'
+		table.insert(humanHeroes[team], { internalName = human.stats.internalName, name = human.stats.name })
+	end
+	DotaRunner:Post('/api/fretbots/heroes', { bots = botHeroes, humans = humanHeroes })
 end
 
 function DataTables:FixBuggedHeroAbilities()

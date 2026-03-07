@@ -40,6 +40,12 @@ local heroUnitNames = require( GetScriptDirectory()..'/FretBots/HeroNames')
 local Customize = require(GetScriptDirectory()..'/FunLib/custom_loader')
 HeroPositionMap = HeroPositionMap.GetHeroPositions()
 
+-- Pick history from DotaRunner (biases picks toward least-used heroes)
+local PickHistory = nil
+pcall(function()
+	PickHistory = require(GetScriptDirectory()..'/Customize/hero_pick_history')
+end)
+
 if GAMEMODE_TURBO == nil then GAMEMODE_TURBO = 23 end
 
 --==============================================================================
@@ -599,6 +605,15 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 						score = score + (-1 * adv)
 					end
 				end
+			end
+
+			-- Bonus for least-picked heroes (DotaRunner pick history)
+			-- Each pick subtracts 5 points, so 1 pick = +10 vs never-picked = +15
+			if PickHistory and PickHistory[cand] then
+				local picks = PickHistory[cand].picks or 0
+				score = score + math.max(0, 15 - picks * 5)
+			elseif PickHistory then
+				score = score + 15  -- never picked = full bonus
 			end
 
 			-- Penalize weak heroes multiplicatively (soft), in addition to hard cap
