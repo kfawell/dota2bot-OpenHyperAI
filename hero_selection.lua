@@ -625,7 +625,12 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 		end
 		for _, entry in ipairs(list) do
 			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
-			entry.score = entry.score + math.max(0, 15 - (picks - minPicks))
+			local delta = picks - minPicks
+			if delta == 0 then
+				entry.score = entry.score + 15
+			else
+				entry.score = entry.score + (-5 - 3 * delta)
+			end
 		end
 	end
 
