@@ -589,6 +589,34 @@ local function TeamOfPlayer(id)
 	return GetTeamForPlayer(id) -- returns TEAM_RADIANT/TEAM_DIRE for that player
 end
 
+-- Filter role pool to only heroes with the lowest pick count (DotaRunner history).
+-- Ensures true rotation: bots will never repick a hero while less-picked options exist.
+local function FilterToLeastPicked(rolePool, team)
+	if not PickHistory then return rolePool end
+
+	-- Find minimum pick count among pickable heroes in this pool
+	local minPicks = math.huge
+	for _, cand in ipairs(rolePool) do
+		if X.CanPickHero(team, cand) then
+			local picks = PickHistory[cand] and PickHistory[cand].picks or 0
+			if picks < minPicks then minPicks = picks end
+		end
+	end
+
+	if minPicks == math.huge then return rolePool end
+
+	-- Keep only heroes at the minimum pick count
+	local filtered = {}
+	for _, cand in ipairs(rolePool) do
+		local picks = PickHistory[cand] and PickHistory[cand].picks or 0
+		if picks <= minPicks then
+			table.insert(filtered, cand)
+		end
+	end
+
+	return #filtered > 0 and filtered or rolePool
+end
+
 local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 	-- Build scored list among pickable heroes only
 	local list = {}
@@ -605,15 +633,6 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 						score = score + (-1 * adv)
 					end
 				end
-			end
-
-			-- Bonus for least-picked heroes (DotaRunner pick history)
-			-- Each pick subtracts 5 points, so 1 pick = +10 vs never-picked = +15
-			if PickHistory and PickHistory[cand] then
-				local picks = PickHistory[cand].picks or 0
-				score = score + math.max(0, 15 - picks * 5)
-			elseif PickHistory then
-				score = score + 15  -- never picked = full bonus
 			end
 
 			-- Penalize weak heroes multiplicatively (soft), in addition to hard cap
@@ -657,7 +676,8 @@ local function PickHeroForBotSlot(i, id)
 	-- Use matchup data most of the time unless user forced picks
 	if not X.IsInCustomizedPicks(preselect) and RandomInt(1, 5) >= 1 then
 		local enemyNames = GetEnemyHeroNames()
-		local scored = ScoreCandidatesForTeam(team, rolePool, enemyNames)
+		local filtered = FilterToLeastPicked(rolePool, team)
+		local scored = ScoreCandidatesForTeam(team, filtered, enemyNames)
 
 		local teamName = (team == TEAM_RADIANT and 'Radiant' or 'Dire')
 		print('==== top 3 heroes for team: '..teamName..' slot: '..i..' id: '..id..' ====')
