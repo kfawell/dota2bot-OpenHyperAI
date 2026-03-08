@@ -618,6 +618,11 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 
 	-- Bonus for least-picked heroes (DotaRunner history, delta-based)
 	if PickHistory and #list > 0 then
+		local cfg = PickHistory._config or {}
+		local cfgBonus = cfg.bonus or 0
+		local cfgBase = cfg.basePenalty or 4
+		local cfgMult = cfg.multiplier or 2
+
 		local minPicks = math.huge
 		for _, entry in ipairs(list) do
 			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
@@ -627,9 +632,9 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
 			local delta = picks - minPicks
 			if delta == 0 then
-				entry.score = entry.score + 15
+				entry.score = entry.score + cfgBonus
 			else
-				entry.score = entry.score + (-4 - 2 * delta)
+				entry.score = entry.score + (-cfgBase - cfgMult * delta)
 			end
 		end
 	end
