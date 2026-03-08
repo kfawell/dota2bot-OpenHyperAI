@@ -612,13 +612,20 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 				score = score * weakPenalty
 			end
 
-			-- Bonus for least-picked heroes (DotaRunner history)
-			if PickHistory then
-				local picks = PickHistory[cand] and PickHistory[cand].picks or 0
-				score = score + math.max(0, 15 - picks)
-			end
-
 			table.insert(list, { name = cand, score = score })
+		end
+	end
+
+	-- Bonus for least-picked heroes (DotaRunner history, delta-based)
+	if PickHistory and #list > 0 then
+		local minPicks = math.huge
+		for _, entry in ipairs(list) do
+			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
+			if picks < minPicks then minPicks = picks end
+		end
+		for _, entry in ipairs(list) do
+			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
+			entry.score = entry.score + math.max(0, 15 - (picks - minPicks))
 		end
 	end
 
