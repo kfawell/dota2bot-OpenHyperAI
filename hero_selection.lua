@@ -629,7 +629,7 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 			if delta == 0 then
 				entry.score = entry.score + 15
 			else
-				entry.score = entry.score + (-5 - 3 * delta)
+				entry.score = entry.score + (-4 - 2 * delta)
 			end
 		end
 	end
