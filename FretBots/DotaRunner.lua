@@ -17,4 +17,24 @@ function DotaRunner:Post(endpoint, data)
     end
 end
 
+-- Send a single debug log line to the DotaRunner log file
+function DotaRunner:Log(tag, msg)
+    self:Post('/api/debug/log', { tag = tag, msg = msg })
+end
+
+-- Send multiple debug log lines in one request (more efficient)
+function DotaRunner:LogBatch(tag, messages)
+    self:Post('/api/debug/log', { tag = tag, messages = messages })
+end
+
+-- Flush hero selection diagnostics collected in the global HeroSelectionLog table.
+-- hero_selection.lua runs in Bot Script Context (no HTTP), so it writes to a global
+-- table that we read here in VScript Context (where CreateHTTPRequest is available).
+function DotaRunner:FlushHeroSelectionLog()
+    if HeroSelectionLog and #HeroSelectionLog > 0 then
+        self:LogBatch('hero_selection', HeroSelectionLog)
+        HeroSelectionLog = {}
+    end
+end
+
 return DotaRunner

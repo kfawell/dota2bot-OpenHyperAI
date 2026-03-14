@@ -41,8 +41,16 @@ local Customize = require(GetScriptDirectory()..'/FunLib/custom_loader')
 HeroPositionMap = HeroPositionMap.GetHeroPositions()
 
 -- DotaRunner integration version (change to verify file is loaded)
-local DOTARUNNER_VERSION = 1
-print('[DotaRunner] hero_selection.lua v'..DOTARUNNER_VERSION..' loaded')
+local DOTARUNNER_VERSION = 2
+
+-- Global log table: FretBots (VScript context) flushes this via HTTP after hero selection
+if HeroSelectionLog == nil then HeroSelectionLog = {} end
+local function logPick(msg)
+	table.insert(HeroSelectionLog, msg)
+	print(msg)  -- also print to in-game console
+end
+
+logPick('[DotaRunner] hero_selection.lua v'..DOTARUNNER_VERSION..' loaded')
 
 -- DotaRunner pick history (dofile for fresh read each game, no require cache)
 local PickHistory = nil
@@ -50,15 +58,15 @@ local pickLoadOk, pickLoadErr = pcall(function()
 	PickHistory = dofile(GetScriptDirectory()..'/Customize/hero_pick_history')
 end)
 if not pickLoadOk then
-	print('[DotaRunner] ERROR loading pick history: '..tostring(pickLoadErr))
+	logPick('[DotaRunner] ERROR loading pick history: '..tostring(pickLoadErr))
 elseif PickHistory then
-	print('[DotaRunner] pick history loaded, _config='..tostring(PickHistory._config ~= nil))
+	logPick('[DotaRunner] pick history loaded, _config='..tostring(PickHistory._config ~= nil))
 else
-	print('[DotaRunner] pick history loaded but nil')
+	logPick('[DotaRunner] pick history loaded but nil')
 end
 
 local PickConfig = (PickHistory and PickHistory._config) or {}
-print('[DotaRunner] mode='..tostring(PickConfig.mode)..' lowestDelta='..tostring(PickConfig.lowestDelta))
+logPick('[DotaRunner] mode='..tostring(PickConfig.mode)..' lowestDelta='..tostring(PickConfig.lowestDelta))
 
 -- Ignored heroes set (managed via DotaRunner UI)
 local IgnoredHeroes = {}
@@ -67,7 +75,7 @@ if PickConfig.ignored then
 		IgnoredHeroes[name] = true
 	end
 end
-print('[DotaRunner] ignored heroes count='..tostring(PickConfig.ignored and #PickConfig.ignored or 0))
+logPick('[DotaRunner] ignored heroes count='..tostring(PickConfig.ignored and #PickConfig.ignored or 0))
 
 if GAMEMODE_TURBO == nil then GAMEMODE_TURBO = 23 end
 
@@ -702,13 +710,22 @@ end
 local function PickByLowestCount(team)
 	local lowestDelta = PickConfig.lowestDelta or 0
 	local list = {}
+	local skippedIgnored, skippedPicked, skippedCanPick = 0, 0, 0
 
 	for _, cand in ipairs(SupportedHeroes) do
-		if not IgnoredHeroes[cand] and not IsPickedInGame(cand) and X.CanPickHero(team, cand) then
+		if IgnoredHeroes[cand] then
+			skippedIgnored = skippedIgnored + 1
+		elseif IsPickedInGame(cand) then
+			skippedPicked = skippedPicked + 1
+		elseif not X.CanPickHero(team, cand) then
+			skippedCanPick = skippedCanPick + 1
+		else
 			local picks = PickHistory and PickHistory[cand] and PickHistory[cand].picks or 0
 			table.insert(list, { name = cand, picks = picks })
 		end
 	end
+
+	logPick('[PickByLowest] candidates='..#list..' skipped: ignored='..skippedIgnored..' inGame='..skippedPicked..' canPick='..skippedCanPick)
 
 	if #list == 0 then return nil end
 
@@ -725,8 +742,12 @@ local function PickByLowestCount(team)
 		end
 	end
 
+	logPick('[PickByLowest] minPicks='..minPicks..' threshold='..threshold..' poolSize='..#pool)
+
 	if #pool == 0 then return nil end
-	return pool[RandomInt(1, #pool)]
+	local pick = pool[RandomInt(1, #pool)]
+	logPick('[PickByLowest] selected='..pick)
+	return pick
 end
 
 local function PickHeroForBotSlot(i, id)
@@ -736,7 +757,7 @@ local function PickHeroForBotSlot(i, id)
 	local mode = PickConfig.mode or 'matchup'
 	local teamName = (team == TEAM_RADIANT and 'Radiant' or 'Dire')
 
-	print('[DotaRunner:v'..DOTARUNNER_VERSION..'] PickHeroForBotSlot slot='..i..' team='..teamName..' mode='..mode..' PickHistory='..tostring(PickHistory ~= nil))
+	logPick('[Pick] slot='..i..' team='..teamName..' mode='..mode..' PickHistory='..tostring(PickHistory ~= nil))
 
 	local pick = nil
 	local source = 'none'
@@ -749,9 +770,9 @@ local function PickHeroForBotSlot(i, id)
 			local enemyNames = GetEnemyHeroNames()
 			local scored = ScoreCandidatesForTeam(team, rolePool, enemyNames)
 
-			print('==== top 3 heroes for team: '..teamName..' slot: '..i..' id: '..id..' ====')
+			logPick('[Matchup] top 3 for '..teamName..' slot='..i..':')
 			for k = 1, math.min(3, #scored) do
-				print(k, scored[k].score, scored[k].name)
+				logPick('  '..k..'. '..scored[k].name..' score='..scored[k].score)
 			end
 
 			pick = SelectTopWithFuzz(scored)
@@ -763,7 +784,9 @@ local function PickHeroForBotSlot(i, id)
 
 	-- Fallback chain
 	if not pick or not X.CanPickHero(team, pick) or IsPickedInGame(pick) then
-		print('[DotaRunner:v'..DOTARUNNER_VERSION..'] fallback triggered, pick='..tostring(pick)..' source='..source)
+		logPick('[Fallback] triggered, pick='..tostring(pick)..' source='..source
+			..' canPick='..tostring(pick and X.CanPickHero(team, pick))
+			..' inGame='..tostring(pick and IsPickedInGame(pick)))
 		if mode == 'lowest' and PickHistory then
 			pick = PickByLowestCount(team)
 			source = pick and 'fallback-lowest' or 'fallback-lowest-nil'
@@ -775,7 +798,7 @@ local function PickHeroForBotSlot(i, id)
 	end
 
 	local picks = PickHistory and PickHistory[pick] and PickHistory[pick].picks or -1
-	print('[DotaRunner:v'..DOTARUNNER_VERSION..'] PICK slot='..i..' hero='..tostring(pick)..' picks='..picks..' source='..source)
+	logPick('[PICK] slot='..i..' hero='..tostring(pick)..' picks='..picks..' source='..source)
 
 	-- Update per-team weak count if needed
 	if Utils.HasValue(WeakHeroes, pick) then
