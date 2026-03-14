@@ -69,7 +69,7 @@ function FretBots:Initialize()
 		DotaRunner:Post('/api/fretbots/init', { version = Version.number })
 		-- Log active interventions so absence signals a mod update overwrote our changes
 		DotaRunner:Post('/api/fretbots/intervention', { type = 'dotarunner_active', reason = 'DotaRunner integration loaded' })
-		DotaRunner:Post('/api/fretbots/intervention', { type = 'pick_history_bonus', reason = 'hero_selection.lua least-picked score bonus active' })
+		DotaRunner:Post('/api/fretbots/intervention', { type = 'general_lua_picks', reason = 'Hero picks controlled by DotaRunner via general.lua' })
 		DotaRunner:Post('/api/fretbots/intervention', { type = 'neutral_ban_list', reason = 'Pyrrhic Cloak reroll active in NeutralItems.lua' })
 	else
 		Debug:Print('FretBots is being initialized')
