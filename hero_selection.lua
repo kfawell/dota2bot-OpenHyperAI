@@ -40,43 +40,6 @@ local heroUnitNames = require( GetScriptDirectory()..'/FretBots/HeroNames')
 local Customize = require(GetScriptDirectory()..'/FunLib/custom_loader')
 HeroPositionMap = HeroPositionMap.GetHeroPositions()
 
--- DotaRunner integration version (change to verify file is loaded)
-local DOTARUNNER_VERSION = 2
-
--- Global log table: FretBots (VScript context) flushes this via HTTP after hero selection
-if HeroSelectionLog == nil then HeroSelectionLog = {} end
-local function logPick(msg)
-	table.insert(HeroSelectionLog, msg)
-	print(msg)  -- also print to in-game console
-end
-
-logPick('[DotaRunner] hero_selection.lua v'..DOTARUNNER_VERSION..' loaded')
-
--- DotaRunner pick history (dofile for fresh read each game, no require cache)
-local PickHistory = nil
-local pickLoadOk, pickLoadErr = pcall(function()
-	PickHistory = dofile(GetScriptDirectory()..'/Customize/hero_pick_history')
-end)
-if not pickLoadOk then
-	logPick('[DotaRunner] ERROR loading pick history: '..tostring(pickLoadErr))
-elseif PickHistory then
-	logPick('[DotaRunner] pick history loaded, _config='..tostring(PickHistory._config ~= nil))
-else
-	logPick('[DotaRunner] pick history loaded but nil')
-end
-
-local PickConfig = (PickHistory and PickHistory._config) or {}
-logPick('[DotaRunner] mode='..tostring(PickConfig.mode)..' lowestDelta='..tostring(PickConfig.lowestDelta))
-
--- Ignored heroes set (managed via DotaRunner UI)
-local IgnoredHeroes = {}
-if PickConfig.ignored then
-	for _, name in ipairs(PickConfig.ignored) do
-		IgnoredHeroes[name] = true
-	end
-end
-logPick('[DotaRunner] ignored heroes count='..tostring(PickConfig.ignored and #PickConfig.ignored or 0))
-
 if GAMEMODE_TURBO == nil then GAMEMODE_TURBO = 23 end
 
 --==============================================================================
@@ -462,16 +425,6 @@ local function AlreadyPickedOnTeam(sHero)
 	return false
 end
 
--- Game-wide duplicate check (both teams)
-local function IsPickedInGame(sHero)
-	for id = 0, 20 do
-		if GetSelectedHeroName(id) == sHero then
-			return true
-		end
-	end
-	return false
-end
-
 -- Should we *block* picking a weak hero due to cap?
 local function IsWeakHeroOverCap(team, sHero)
 	if not Utils.HasValue(WeakHeroes, sHero) then return false end
@@ -635,25 +588,8 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 	local list = {}
 	local weakPenalty = WeakPenaltyFactor(team)
 
-	-- Pick history weighting config (matchup mode)
-	local bonus = PickConfig.bonus or 0
-	local basePenalty = PickConfig.basePenalty or 4
-	local multiplier = PickConfig.multiplier or 2
-
-	-- Find global minimum pick count (among non-ignored heroes)
-	local globalMin = math.huge
-	if PickHistory then
-		for _, hero in ipairs(SupportedHeroes) do
-			if not IgnoredHeroes[hero] then
-				local picks = PickHistory[hero] and PickHistory[hero].picks or 0
-				if picks < globalMin then globalMin = picks end
-			end
-		end
-	end
-	if globalMin == math.huge then globalMin = 0 end
-
 	for _, cand in ipairs(rolePool) do
-		if X.CanPickHero(team, cand) and not IgnoredHeroes[cand] and not IsPickedInGame(cand) then
+		if X.CanPickHero(team, cand) then
 			local score = 0
 			-- Sum counter advantages (negate enemy advantage)
 			if matchups[cand] then
@@ -668,17 +604,6 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 			-- Penalize weak heroes multiplicatively (soft), in addition to hard cap
 			if Utils.HasValue(WeakHeroes, cand) then
 				score = score * weakPenalty
-			end
-
-			-- Pick history weight: bonus at min, penalty above min
-			if PickHistory then
-				local picks = PickHistory[cand] and PickHistory[cand].picks or 0
-				local delta = picks - globalMin
-				if delta == 0 then
-					score = score + bonus
-				elseif delta > 0 then
-					score = score - (basePenalty + multiplier * delta)
-				end
 			end
 
 			table.insert(list, { name = cand, score = score })
@@ -706,102 +631,41 @@ local function SelectTopWithFuzz(scored)
 	end
 end
 
--- Lowest-picks mode: randomly pick from heroes with globally lowest pick counts
-local function PickByLowestCount(team)
-	local lowestDelta = PickConfig.lowestDelta or 0
-	local list = {}
-	local skippedIgnored, skippedPicked, skippedCanPick = 0, 0, 0
-
-	for _, cand in ipairs(SupportedHeroes) do
-		if IgnoredHeroes[cand] then
-			skippedIgnored = skippedIgnored + 1
-		elseif IsPickedInGame(cand) then
-			skippedPicked = skippedPicked + 1
-		elseif X.IsBannedHero(cand) then
-			skippedCanPick = skippedCanPick + 1
-		else
-			local picks = PickHistory and PickHistory[cand] and PickHistory[cand].picks or 0
-			table.insert(list, { name = cand, picks = picks })
-		end
-	end
-
-	logPick('[PickByLowest] candidates='..#list..' skipped: ignored='..skippedIgnored..' inGame='..skippedPicked..' canPick='..skippedCanPick)
-
-	if #list == 0 then return nil end
-
-	local minPicks = math.huge
-	for _, entry in ipairs(list) do
-		if entry.picks < minPicks then minPicks = entry.picks end
-	end
-
-	local threshold = minPicks + lowestDelta
-	local pool = {}
-	for _, entry in ipairs(list) do
-		if entry.picks <= threshold then
-			table.insert(pool, entry.name)
-		end
-	end
-
-	logPick('[PickByLowest] minPicks='..minPicks..' threshold='..threshold..' poolSize='..#pool)
-
-	if #pool == 0 then return nil end
-	local pick = pool[RandomInt(1, #pool)]
-	logPick('[PickByLowest] selected='..pick)
-	return pick
-end
-
 local function PickHeroForBotSlot(i, id)
 	local team = TeamOfPlayer(id)
 	local rolePool = tSelectPoolList[i]
 	local preselect = sSelectList[i]
-	local mode = PickConfig.mode or 'matchup'
-	local teamName = (team == TEAM_RADIANT and 'Radiant' or 'Dire')
 
-	logPick('[Pick] slot='..i..' team='..teamName..' mode='..mode..' PickHistory='..tostring(PickHistory ~= nil))
+	-- Default to preselect for variety path; can be overridden below
+	local pick = preselect
 
-	local pick = nil
-	local source = 'none'
+	-- Use matchup data most of the time unless user forced picks
+	if not X.IsInCustomizedPicks(preselect) and RandomInt(1, 5) >= 1 then
+		local enemyNames = GetEnemyHeroNames()
+		local scored = ScoreCandidatesForTeam(team, rolePool, enemyNames)
 
-	if not X.IsInCustomizedPicks(preselect) then
-		if mode == 'lowest' and PickHistory then
-			pick = PickByLowestCount(team)
-			source = pick and 'lowest' or 'lowest-nil'
-		else
-			local enemyNames = GetEnemyHeroNames()
-			local scored = ScoreCandidatesForTeam(team, rolePool, enemyNames)
-
-			logPick('[Matchup] top 3 for '..teamName..' slot='..i..':')
-			for k = 1, math.min(3, #scored) do
-				logPick('  '..k..'. '..scored[k].name..' score='..scored[k].score)
-			end
-
-			pick = SelectTopWithFuzz(scored)
-			source = pick and 'matchup' or 'matchup-nil'
+		local teamName = (team == TEAM_RADIANT and 'Radiant' or 'Dire')
+		print('==== top 3 heroes for team: '..teamName..' slot: '..i..' id: '..id..' ====')
+		for k = 1, math.min(3, #scored) do
+			print(k, scored[k].score, scored[k].name)
 		end
-	else
-		source = 'customized'
-	end
 
-	-- Fallback chain
-	if not pick or not X.CanPickHero(team, pick) or IsPickedInGame(pick) then
-		logPick('[Fallback] triggered, pick='..tostring(pick)..' source='..source
-			..' canPick='..tostring(pick and X.CanPickHero(team, pick))
-			..' inGame='..tostring(pick and IsPickedInGame(pick)))
-		if mode == 'lowest' and PickHistory then
-			pick = PickByLowestCount(team)
-			source = pick and 'fallback-lowest' or 'fallback-lowest-nil'
-		end
-		if not pick or not X.CanPickHero(team, pick) or IsPickedInGame(pick) then
+		pick = SelectTopWithFuzz(scored)
+
+		-- Fallback: if none are pickable (due to bans/repeats/weakcap), random available
+		if not pick then
 			pick = X.GetRandomAvailableHero(team, rolePool) or preselect
-			source = 'fallback-random'
 		end
 	end
 
-	local picks = PickHistory and PickHistory[pick] and PickHistory[pick].picks or -1
-	logPick('[PICK] slot='..i..' hero='..tostring(pick)..' picks='..picks..' source='..source)
+	-- Final safety: ensure policy still holds (e.g., late ban added)
+	if not X.CanPickHero(team, pick) then
+		pick = X.GetRandomAvailableHero(team, rolePool) or preselect
+	end
 
 	-- Update per-team weak count if needed
 	if Utils.HasValue(WeakHeroes, pick) then
+		-- Refresh live count (defensive) and then increment by pick
 		WeakHeroCount[team] = CountWeakHeroesSelectedOnTeam(team)
 		WeakHeroCount[team] = WeakHeroCount[team] + 1
 	end
