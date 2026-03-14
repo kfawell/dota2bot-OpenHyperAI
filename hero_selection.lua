@@ -40,12 +40,6 @@ local heroUnitNames = require( GetScriptDirectory()..'/FretBots/HeroNames')
 local Customize = require(GetScriptDirectory()..'/FunLib/custom_loader')
 HeroPositionMap = HeroPositionMap.GetHeroPositions()
 
--- Pick history from DotaRunner (biases picks toward least-used heroes)
-local PickHistory = nil
-pcall(function()
-	PickHistory = require(GetScriptDirectory()..'/Customize/hero_pick_history')
-end)
-
 if GAMEMODE_TURBO == nil then GAMEMODE_TURBO = 23 end
 
 --==============================================================================
@@ -140,7 +134,6 @@ local WeakHeroes = {
     'npc_dota_hero_dark_willow',
     'npc_dota_hero_hoodwink',
     'npc_dota_hero_wisp',
-    'npc_dota_hero_naga_siren',
 }
 
 --==============================================================================
@@ -614,29 +607,6 @@ local function ScoreCandidatesForTeam(team, rolePool, enemyNames)
 			end
 
 			table.insert(list, { name = cand, score = score })
-		end
-	end
-
-	-- Bonus for least-picked heroes (DotaRunner history, delta-based)
-	if PickHistory and #list > 0 then
-		local cfg = PickHistory._config or {}
-		local cfgBonus = cfg.bonus or 0
-		local cfgBase = cfg.basePenalty or 4
-		local cfgMult = cfg.multiplier or 2
-
-		local minPicks = math.huge
-		for _, entry in ipairs(list) do
-			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
-			if picks < minPicks then minPicks = picks end
-		end
-		for _, entry in ipairs(list) do
-			local picks = PickHistory[entry.name] and PickHistory[entry.name].picks or 0
-			local delta = picks - minPicks
-			if delta == 0 then
-				entry.score = entry.score + cfgBonus
-			else
-				entry.score = entry.score + (-cfgBase - cfgMult * delta)
-			end
 		end
 	end
 

@@ -15,7 +15,6 @@ else Customize = require( GetScriptDirectory()..'/FunLib/custom_loader' ) end
 local Localization = require 'bots/FunLib/localization'
 -- HeroSounds
 local Chat = require('bots.FretBots.Chat')
-local DotaRunner = require('bots.FretBots.DotaRunner')
 if not Customize.Fretbots then Customize.Fretbots = { } end
 
 -- default difficulty if no one votes
@@ -115,9 +114,13 @@ local chatCommands =
 	'speak', 'sp',      -- speak specific language
 
 }
-
-Settings.isPlaySounds = Customize.Fretbots.Play_Sounds or Settings.isPlaySounds
-Settings.isPlayerDeathSound = Customize.Fretbots.Player_Death_Sound or Settings.isPlayerDeathSound
+if Customize and Customize.Fretbots then
+    Settings.isPlaySounds = Customize.Fretbots.Play_Sounds
+    Settings.isPlayerDeathSound = Customize.Fretbots.Player_Death_Sound
+else
+    Settings.isPlaySounds =  Settings.isPlaySounds
+    Settings.isPlayerDeathSound = Settings.isPlayerDeathSound
+end
 
 function Settings:CalculateDifficultyScale(difficulty)
 	-- no argument implies default, do nothing
@@ -1109,10 +1112,6 @@ end
 
 function Settings:PostGameHandler()
 	Debug:Print('Begining post game handling.')
-	local winner = 'unknown'
-	if GameRules:GetGameWinner() == DOTA_TEAM_GOODGUYS then winner = 'radiant'
-	elseif GameRules:GetGameWinner() == DOTA_TEAM_BADGUYS then winner = 'dire' end
-	DotaRunner:Post('/api/fretbots/game-end', { winner = winner })
 	Timers:CreateTimer(postGameTimerName, {endTime = 2, callback =  Settings['PostGameTimer']} )
 end
 

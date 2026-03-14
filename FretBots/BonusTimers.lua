@@ -17,7 +17,6 @@ require 'bots.FretBots.Flags'
 -- Neutral Item Helpers
 require 'bots.FretBots.NeutralItems'
 local StaticNeutralsMatchup = require('bots.FretBots.neutrals_data')
-local DotaRunner = require('bots.FretBots.DotaRunner')
 
 -- local debug flag
 local thisDebug = false;
@@ -524,7 +523,6 @@ end
 function BonusTimers:Register()
 	-- Game start bonus - Special case that happens one time when BonusTimers are registered
 	BonusTimers:GameStartBonus()
-	DotaRunner:Post('/api/fretbots/game-start', { difficulty = Settings.difficulty })
 	-- Register NeutralItemFindTimer
 	if not inits.neutralItemFindTimer then
 		if isDebug then

@@ -8,7 +8,6 @@ require 'bots.FretBots.Settings'
 require 'bots.FretBots.Utilities'
 -- Flags for tracking status
 require 'bots.FretBots.Flags'
-local DotaRunner = require('bots.FretBots.DotaRunner')
 
 local masterNeutralTable = dofile('bots.FretBots.SettingsNeutralItemTable')
 
@@ -103,33 +102,7 @@ function NeutralItems:GetRandomEnhancementByTier(tier)
 end
 
 -- Creates a specific item, inserts it into the bot
--- Items that should never be assigned (reroll from same tier instead)
-local bannedNeutrals = {
-	['item_pyrrhic_cloak'] = true,
-}
-local bannedRerollLog = {}
-
 function NeutralItems:CreateAndInsert(bot, itemName, tier)
-	-- Reroll banned items from the same tier (max 10 attempts to avoid infinite loop)
-	local attempts = 0
-	while bannedNeutrals[itemName] and attempts < 10 do
-		local tierItems = NeutralItems:GetTableForTier(tier)
-		local pick = tierItems[math.random(#tierItems)]
-		if pick then
-			local original = itemName
-			itemName = pick.name
-			if not bannedRerollLog[original] then
-				bannedRerollLog[original] = true
-				DotaRunner:Post('/api/fretbots/intervention', {
-					type = 'neutral_reroll',
-					original = original,
-					replacement = itemName,
-					reason = 'Banned neutral item rerolled',
-				})
-			end
-		end
-		attempts = attempts + 1
-	end
 	if bot:HasRoomForItem(itemName, true, true) then
 		local item = CreateItem(itemName, bot, bot)
 		item:SetPurchaseTime(0)

@@ -4,7 +4,6 @@ require 'bots.FretBots.Debug'
 -- Timers
 require 'bots.FretBots.Timers'
 local Localization = require 'bots/FunLib/localization'
-local DotaRunner = require('bots.FretBots.DotaRunner')
 
 -- Instantiate ourself
 if RoleDetermination == nil then
@@ -278,16 +277,6 @@ function RoleDetermination:AnnounceRoles()
 			Utilities:Print(msg)
 		end
 	end
-
-	-- Notify DotaRunner of role assignments
-	local roleData = { radiant = {}, dire = {} }
-	for team = 2, 3 do
-		local key = (team == 2) and 'radiant' or 'dire'
-		for _, bot in ipairs(AllBots[team] or {}) do
-			table.insert(roleData[key], { internalName = bot.stats.internalName, name = bot.stats.name, role = bot.stats.role })
-		end
-	end
-	DotaRunner:Post('/api/fretbots/roles', roleData)
 end
 
 -- Starts the role determination timer
