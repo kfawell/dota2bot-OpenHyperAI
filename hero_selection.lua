@@ -717,7 +717,7 @@ local function PickByLowestCount(team)
 			skippedIgnored = skippedIgnored + 1
 		elseif IsPickedInGame(cand) then
 			skippedPicked = skippedPicked + 1
-		elseif not X.CanPickHero(team, cand) then
+		elseif X.IsBannedHero(cand) then
 			skippedCanPick = skippedCanPick + 1
 		else
 			local picks = PickHistory and PickHistory[cand] and PickHistory[cand].picks or 0
