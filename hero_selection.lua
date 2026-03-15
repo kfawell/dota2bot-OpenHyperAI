@@ -875,9 +875,9 @@ local function InitPickScheduleOnce()
 	end
 
 	-- Tweak these three to taste:
-	local base  = GameTime() + 3          -- when the *first* bot may pick
-	local step  = GetTeam() * 3           -- spacing between slots
-	local jitter_min, jitter_max = 1, 3   -- small variability per slot
+	local base  = GameTime() + 1          -- when the *first* bot may pick
+	local step  = 1                       -- spacing between slots
+	local jitter_min, jitter_max = 0, 1   -- small variability per slot
 
 	local teamPlayers = GetTeamPlayers(GetTeam(), true)
 	for slot = 1, #teamPlayers do
