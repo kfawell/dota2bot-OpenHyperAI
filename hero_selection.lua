@@ -858,7 +858,9 @@ local function handleCommand(inputStr, PlayerID, bTeamOnly)
 end
 
 function HandleLocaleSetting(locale)
-	Customize.Localization = locale
+	if Customize then
+		Customize.Localization = locale
+	end
 	print("Set to speak: ".. locale)
 end
 
@@ -963,14 +965,18 @@ end
 local playerNameOverrides = { Radiant = {}, Dire = {} }
 
 if Customize then
-	for i = 1, #Customize.Radiant_Names do
-		if Customize.Radiant_Names[i] ~= nil then
-			playerNameOverrides.Radiant[i] = Utils.TrimString(Customize.Radiant_Names[i])
+	if Customize.Radiant_Names then
+		for i = 1, #Customize.Radiant_Names do
+			if Customize.Radiant_Names[i] ~= nil then
+				playerNameOverrides.Radiant[i] = Utils.TrimString(Customize.Radiant_Names[i])
+			end
 		end
 	end
-	for i = 1, #Customize.Dire_Names do
-		if Customize.Dire_Names[i] ~= nil then
-			playerNameOverrides.Dire[i] = Utils.TrimString(Customize.Dire_Names[i])
+	if Customize.Dire_Names then
+		for i = 1, #Customize.Dire_Names do
+			if Customize.Dire_Names[i] ~= nil then
+				playerNameOverrides.Dire[i] = Utils.TrimString(Customize.Dire_Names[i])
+			end
 		end
 	end
 end

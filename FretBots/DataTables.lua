@@ -143,9 +143,6 @@ function DataTables:Initialize()
 		table.insert(humanHeroes[team], { internalName = human.stats.internalName, name = human.stats.name })
 	end
 	DotaRunner:Post('/api/fretbots/heroes', { bots = botHeroes, humans = humanHeroes })
-
-	-- Flush hero selection diagnostics (collected during Bot Script Context picking)
-	DotaRunner:FlushHeroSelectionLog()
 end
 
 function DataTables:FixBuggedHeroAbilities()

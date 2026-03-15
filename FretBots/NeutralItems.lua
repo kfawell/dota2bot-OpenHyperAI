@@ -130,6 +130,11 @@ function NeutralItems:CreateAndInsert(bot, itemName, tier)
 		end
 		attempts = attempts + 1
 	end
+	-- If reroll failed to find a non-banned item, skip this assignment entirely
+	if bannedNeutrals[itemName] then
+		print('[DotaRunner] Could not reroll away from banned item: ' .. itemName)
+		return
+	end
 	if bot:HasRoomForItem(itemName, true, true) then
 		local item = CreateItem(itemName, bot, bot)
 		item:SetPurchaseTime(0)
