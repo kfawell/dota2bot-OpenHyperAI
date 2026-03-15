@@ -868,14 +868,14 @@ local function InitPickScheduleOnce()
 	if PickSchedule.initialized then return end
 
 	-- Don’t even initialize until basic preconditions are met
-	if (GameTime() < 3.0 and not bLineupReserve)
+	if (GameTime() < 1.0 and not bLineupReserve)
 	or X.IsHumanNotReady(GetTeam())
 	or X.IsHumanNotReady(GetOpposingTeam()) then
 		return
 	end
 
 	-- Tweak these three to taste:
-	local base  = GameTime() + 1          -- when the *first* bot may pick
+	local base  = GameTime() + 0.5        -- when the *first* bot may pick
 	local step  = 1                       -- spacing between slots
 	local jitter_min, jitter_max = 0, 1   -- small variability per slot
 
@@ -904,7 +904,7 @@ function Think()
 	elseif GetGameMode() == GAMEMODE_1V1MID then
 		OneVsOneLogic()
 	else
-		if (GameTime() < 3.0 and not bLineupReserve)
+		if (GameTime() < 1.0 and not bLineupReserve)
 		or X.IsHumanNotReady(GetTeam())
 		or X.IsHumanNotReady(GetOpposingTeam()) then
 			if GetGameMode() ~= GAMEMODE_TURBO then return end
