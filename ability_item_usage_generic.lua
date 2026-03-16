@@ -5,7 +5,7 @@ if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not string.find(bot
 if not bot.frameProcessTime then bot.frameProcessTime = 0.1 end
 
 local team = GetTeam()
-local bDebugMode = ( 10 == 10 )
+local bDebugMode = false
 
 local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
 local Utils = require( GetScriptDirectory()..'/FunLib/utils' )
