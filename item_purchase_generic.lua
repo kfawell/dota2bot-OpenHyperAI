@@ -727,7 +727,6 @@ function ItemPurchaseThink()
 		and bot:IsAlive()
 		and botGold < ( tpCost + botWorth / 40 )
 		and botHP < 0.08
-		and botHP >= 1
 		and bot:WasRecentlyDamagedByAnyHero( 3.1 )
 		and not HasSufficientTp()
 		and Item.GetItemCharges( bot, 'item_tpscroll' ) <= 2
