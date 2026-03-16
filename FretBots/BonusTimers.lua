@@ -452,10 +452,12 @@ function BonusTimers:GameStartBonus()
 	local awarded = false
 	if Settings.difficulty >= 1 then
 		for _, bot in pairs(AllBots[team]) do
-			-- HP regen
-			bot:SetBaseHealthRegen(bot:GetBaseHealthRegen() * Utilities:RemapValClamped(Settings.difficultyScale / bot:GetBaseHealthRegen(), 0, 10, 1.2, 6))
-			-- Mana regen
-			bot:SetBaseManaRegen(bot:GetBaseManaRegen() * Utilities:RemapValClamped(Settings.difficultyScale / bot:GetBaseManaRegen(), 0, 10, 1.6, 10))
+			-- HP regen (guard against zero base regen)
+			local baseHPRegen = math.max(bot:GetBaseHealthRegen(), 0.1)
+			bot:SetBaseHealthRegen(baseHPRegen * Utilities:RemapValClamped(Settings.difficultyScale / baseHPRegen, 0, 10, 1.2, 6))
+			-- Mana regen (guard against zero base regen)
+			local baseManaRegen = math.max(bot:GetBaseManaRegen(), 0.1)
+			bot:SetBaseManaRegen(baseManaRegen * Utilities:RemapValClamped(Settings.difficultyScale / baseManaRegen, 0, 10, 1.6, 10))
 			-- bot:SetHPRegenGain(5 * Settings.difficultyScale)
 			-- bot:SetManaRegenGain(5 * Settings.difficultyScale)
 		end
