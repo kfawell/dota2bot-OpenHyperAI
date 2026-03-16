@@ -4728,7 +4728,7 @@ X.ConsiderItemDesire["item_tpscroll"] = function( hItem )
 	-- Go complete items
 	if X.IsInvFull(bot) and X.GetNumStashItem(bot) >= 1
 	and (X.IsThereRecipeInStash(bot) or (bot:GetStashValue() >= 1000 and bot:GetGold() > 1100))
-	and (bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_TOP or bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_MID or bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_BOT or bot:GetActiveMode() ~= BOT_MODE_ATTACK)
+	and (bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_TOP and bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_MID and bot:GetActiveMode() ~= BOT_MODE_PUSH_TOWER_BOT and bot:GetActiveMode() ~= BOT_MODE_ATTACK)
 	and not J.IsInTeamFight(bot, 1000)
 	and nEnemyCount == 0
 	then
