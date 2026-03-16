@@ -173,7 +173,8 @@ local function ShouldPickDurableOrOtherSupports(name, position, minCount)
 end
 
 -- Build a weighted/screened list for a position, then cut to top-k
-local function GetPositionedPool(heroPosMap, position)
+local function GetPositionedPool(heroPosMap, position, depth)
+    depth = depth or 0
     local heroList = {}
 	-- Pick from weighted options for the pos first.
     for heroName, roleWeights in pairs(heroPosMap) do
@@ -204,9 +205,9 @@ local function GetPositionedPool(heroPosMap, position)
 		end
     end
 
-	-- In case pool is small (rare), re-merge another pass
-	if #sortedHeroNames < 6 then
-		sortedHeroNames = Utils.CombineTablesUnique(sortedHeroNames, GetPositionedPool(heroPosMap, position))
+	-- In case pool is small (rare), re-merge another pass (max 3 retries)
+	if #sortedHeroNames < 6 and depth < 3 then
+		sortedHeroNames = Utils.CombineTablesUnique(sortedHeroNames, GetPositionedPool(heroPosMap, position, depth + 1))
 	end
     return sortedHeroNames
 end
