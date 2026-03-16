@@ -640,7 +640,7 @@ local function PickHeroForBotSlot(i, id)
 	local pick = preselect
 
 	-- Use matchup data most of the time unless user forced picks
-	if not X.IsInCustomizedPicks(preselect) and RandomInt(1, 5) >= 1 then
+	if not X.IsInCustomizedPicks(preselect) and RandomInt(1, 5) >= 2 then
 		local enemyNames = GetEnemyHeroNames()
 		local scored = ScoreCandidatesForTeam(team, rolePool, enemyNames)
 
