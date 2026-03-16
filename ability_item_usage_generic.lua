@@ -4705,7 +4705,7 @@ X.ConsiderItemDesire["item_tpscroll"] = function( hItem )
 
 	if nMode == BOT_MODE_LANING
 	then
-		hEffectTarget, shouldTp = X.GetLaningTPLocation(bot, nMinTPDistance, botLocation)
+		local hEffectTarget, shouldTp = X.GetLaningTPLocation(bot, nMinTPDistance, botLocation)
 		sCastMotive = '出去发育'
 		if shouldTp
 		then
@@ -5062,7 +5062,7 @@ X.ConsiderItemDesire["item_tpscroll"] = function( hItem )
 
 		if mostFarmDesire > 0.1
 		then
-			farmTpLoc = GetLaneFrontLocation( team, mostFarmDesireLane, 0 )
+			local farmTpLoc = GetLaneFrontLocation( team, mostFarmDesireLane, 0 )
 			local bestTpLoc = J.GetNearbyLocationToTp( farmTpLoc )
 			if bestTpLoc ~= nil and farmTpLoc ~= nil
 				and J.IsLocHaveTower( 2000, false, farmTpLoc )
@@ -6044,6 +6044,7 @@ X.ConsiderItemDesire["item_gungir"] = function( hItem )
 		and not J.HasInvisCounterBuff(enemyHero)
 		and not J.IsSuspiciousIllusion(enemyHero)
 		then
+			local hEffectTarget = enemyHero
 			if hItem:GetName() == "item_gungir" then hEffectTarget = enemyHero:GetLocation() end
 			return BOT_ACTION_DESIRE_HIGH, hEffectTarget, 'unit', 'Stop invis'
 		end	
@@ -7795,7 +7796,7 @@ X.ConsiderItemDesire["item_minotaur_horn"] = function( hItem )
 			return BOT_ACTION_DESIRE_HIGH, bot, 'none', nil
 		end
 
-        nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 600)
+        local nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 600)
 		if bot:IsSilenced()
         and #nInRangeEnemy >= 2
         and not bot:HasModifier('modifier_item_mask_of_madness_berserk')
@@ -7811,6 +7812,7 @@ X.ConsiderItemDesire["item_minotaur_horn"] = function( hItem )
 		end
 
         nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 1200)
+		local nAllyHeroes = J.GetAlliesNearLoc(bot:GetLocation(), 1200)
 		if #nInRangeEnemy > #nAllyHeroes
         and J.GetHP(bot) < 0.6
         and J.IsValidHero(nInRangeEnemy[1])

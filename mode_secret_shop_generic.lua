@@ -48,7 +48,7 @@ function GetDesireHelper()
 
 	if invFull then
 		if bot:GetLevel() > 11 and bot:FindItemSlot("item_aegis") < 0 then
-			hasItemToSell, itemSlot = X.HaveItemToSell();
+			local hasItemToSell, itemSlot = X.HaveItemToSell();
 			if hasItemToSell then
 				preferedShop = X.GetPreferedSecretShop();
 				if preferedShop ~= nil then

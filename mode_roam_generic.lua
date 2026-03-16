@@ -1041,6 +1041,7 @@ function CheckLaneToGank(botPosition)
 		return BOT_ACTION_DESIRE_VERYHIGH
 	end
 
+	local botLevel = bot:GetLevel()
 	local botLvlTooLow = (J.GetPosition(bot) == 1 and botLevel < 6) or
 		(J.GetPosition(bot) == 2 and botLevel < 6) or
 		(J.GetPosition(bot) == 3 and botLevel < 5) or
