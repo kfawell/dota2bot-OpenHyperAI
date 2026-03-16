@@ -5811,7 +5811,7 @@ function J.GetCurrentRoshanLocation()
 end
 
 function J.GetTormentorLocation(team)
-	if J.CheckTimeOfDay() == 'day'
+	if team == TEAM_RADIANT
 	then
 		return DireTormentorLoc
 	else
@@ -5820,8 +5820,7 @@ function J.GetTormentorLocation(team)
 end
 
 function J.GetTormentorWaitingLocation(team)
-	local timeOfday = J.CheckTimeOfDay()
-	if timeOfday == 'day' then
+	if team == TEAM_RADIANT then
 		return Vector(-7041, 6796, 256)
 	else
 		return Vector(6792, -6815, 256)
