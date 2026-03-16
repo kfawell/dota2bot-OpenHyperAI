@@ -27,7 +27,7 @@ end
 
 -- this represents the settings prior to any adjustments
 if cache == nil then
-	local cache = {}
+	cache = {}
 end
 
 -- Dynamically adjusts settings values to adjust difficulty dynamically.
@@ -41,11 +41,11 @@ function DynamicDifficulty:Adjust(victim)
 	-- do not do anything for humans
 	if not victim.stats.isBot then return end
 	for _, knob in ipairs(Settings.dynamicDifficulty.knobs) do
-		if knob == 'xpm' or knob == 'gpm' and Settings.dynamicDifficulty[knob].enabled then
+		if (knob == 'xpm' or knob == 'gpm') and Settings.dynamicDifficulty[knob].enabled then
 			-- GPM
-			DynamicDifficulty:MakeAdjustment('gpm')
+			DynamicDifficulty:MakeAdjustment('gpm', victim)
 			-- XPM
-			DynamicDifficulty:MakeAdjustment('xpm')
+			DynamicDifficulty:MakeAdjustment('xpm', victim)
 		else
 			if Settings.dynamicDifficulty[knob].enabled then
 				DynamicDifficulty:AdjustDeathBonus(knob, victim)
@@ -55,7 +55,7 @@ function DynamicDifficulty:Adjust(victim)
 end
 
 -- Makes an adjustment to one of the two knobs (gpm / xpm)
-function DynamicDifficulty:MakeAdjustment(knob)
+function DynamicDifficulty:MakeAdjustment(knob, victim)
 	local bonus, advantage, increments =
 			DynamicDifficulty:GetCurrentAdjustment(Settings.dynamicDifficulty[knob], victim)
 	if bonus >= 0 then
@@ -109,7 +109,7 @@ function DynamicDifficulty:GetCurrentAdjustment(settings, victim)
 end
 
 -- Makes dynamic death bonus adjustments
-function DynamicDifficulty:AdjustDeathBonus(knob, bot)
+function DynamicDifficulty:AdjustDeathBonus(knob, victim)
 	-- offset
 	local bonus, advantage, increments =
 			DynamicDifficulty:GetCurrentAdjustment(Settings.dynamicDifficulty[knob], victim)
@@ -132,7 +132,7 @@ function DynamicDifficulty:AdjustDeathBonus(knob, bot)
 		bonus, advantage, increments =
 				DynamicDifficulty:GetCurrentAdjustment(Settings.dynamicDifficulty[knob].chanceAdjust, victim)
 		if bonus > 0 then
-			bot.stats.chance[knob] = bot.stats.chance[knob] + bonus
+			victim.stats.chance[knob] = victim.stats.chance[knob] + bonus
 			if Settings.dynamicDifficulty[knob].announce then
 				local msg = 'Bots are behind! Human advantage: '..advantage..' kills. '
 				local msg = msg..'Adjusting Bot Death Bonus: '..knob..
@@ -141,7 +141,7 @@ function DynamicDifficulty:AdjustDeathBonus(knob, bot)
 			end
 		-- if bonus drops to zero, reapply cached values
 		else
-			bot.stats.chance[knob] = cache.deathBonus.chance[knob]
+			victim.stats.chance[knob] = cache.deathBonus.chance[knob]
 		end
 	end
 end
