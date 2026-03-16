@@ -52,7 +52,7 @@ local runMode = false;
 
 if bot.farmLocation == nil then bot.farmLocation = bot:GetLocation() end
 
-function GetDesie()
+function GetDesire()
 	-- local cacheKey = 'GetFarmDesire'..tostring(bot:GetPlayerID())
 	-- local cachedVar = J.Utils.GetCachedVars(cacheKey, 0.4)
 	-- if DotaTime() > 30 and cachedVar ~= nil then return cachedVar end
@@ -422,7 +422,7 @@ function OnEnd()
 	bot:SetTarget(nil);
 end
 
-function Thnk()
+function Think()
 	if J.CanNotUseAction(bot) then return end
 	if J.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "farm") then return end
 	if runMode
