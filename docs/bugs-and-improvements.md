@@ -36,11 +36,9 @@
 **Impact:** Performance drag from debug logging in production. Possible console spam.
 **Fix:** Change to `local bDebugMode = false`.
 
-### 6. Double TP Purchase (`ability_item_usage_generic.lua` / `item_purchase_generic.lua`)
-**Lines:** 750–753 (ability), 750–753 (purchase)
-**Issue:** When `botGold >= tpCost * 2 and currentTime > 25*60`, two `ActionImmediate_PurchaseItem("item_tpscroll")` calls execute in the same frame. The second call is unconditional.
-**Impact:** Bots waste gold buying two TPs simultaneously.
-**Fix:** Make the second purchase conditional or return after the first.
+### 6. ~~Double TP Purchase~~ (`item_purchase_generic.lua`) — INTENTIONAL
+**Lines:** 749–753
+**Status:** Not a bug. When `botGold >= tpCost * 2` and late game (>25 min), the bot intentionally buys 2 TPs (a spare for late game). The outer condition `tCharges <= 0 or (level >= 18 and tCharges <= 1)` gates this correctly.
 
 ### 7. Impossible TP Guard (`item_purchase_generic.lua`)
 **Lines:** 726–736
@@ -109,11 +107,9 @@
 **Impact:** Any code checking distance to enemy fountain gets the wrong location.
 **Fix:** Use `jmz.GetEnemyFountain()` (or equivalent).
 
-### 19. Kill Count Logic Inverted (`FunLib/jmz_func.lua`)
+### 19. ~~Kill Count Logic Inverted~~ (`FunLib/jmz_func.lua`) — FALSE POSITIVE
 **Line:** 4143–4147
-**Issue:** `GetNumOfTeamTotalKills(bEnemy)` — when `bEnemy=true`, returns **allied** kills; when `bEnemy=false`, returns **enemy** kills. Logic is inverted.
-**Impact:** Any caller relying on this gets opposite results. Affects networth/advantage calculations.
-**Fix:** Swap the team assignment logic.
+**Status:** Not a bug. The function counts deaths (not kills) on a team, so `bEnemy=true` → counts ally deaths → equals enemy kills. Callers (`mode_farm_generic.lua:279-280`) use it correctly. The naming is confusing but the logic is correct.
 
 ### 20. Tormentor Location Ignores Team (`FunLib/jmz_func.lua`)
 **Line:** 5813
@@ -121,11 +117,9 @@
 **Impact:** Bots may path to the wrong Tormentor.
 **Fix:** Use the `team` parameter to select the correct location.
 
-### 21. IsTargetedByEnemyWithModifier Uses Wrong Bot (`FunLib/jmz_func.lua`)
+### 21. ~~IsTargetedByEnemyWithModifier Uses Wrong Bot~~ (`FunLib/jmz_func.lua`) — FALSE POSITIVE
 **Line:** 1283
-**Issue:** References the module-level `bot` upvalue instead of the function parameter. Always checks if the module-loader bot is targeted, not the intended unit.
-**Impact:** Function returns wrong results for any bot other than the one that loaded the module.
-**Fix:** Use the function parameter instead of the upvalue.
+**Status:** Not a bug. In Dota 2 bot scripting, `require()` is per-bot (each bot runs in its own Lua state). The module-level `bot = GetBot()` correctly refers to the current bot in each state. The `bot` upvalue is the correct reference.
 
 ---
 
