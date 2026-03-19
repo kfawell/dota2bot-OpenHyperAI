@@ -458,14 +458,30 @@ function X.GetUnitDesire(nRadius)
 end
 
 function X.RetreatWhenTowerTargetedDesire()
-    if DotaTime() > 10 * 60 or J.IsInTeamFight(bot, 1600) then
+    if J.IsInTeamFight(bot, 1600) then
         return 0
     end
 
     local nEnemyTowers = bot:GetNearbyTowers(800, true)
 
-    if J.IsValidBuilding(nEnemyTowers[1]) and not J.IsPushing(bot) then
-        if J.IsGoingOnSomeone(bot) then
+    if J.IsValidBuilding(nEnemyTowers[1]) then
+        -- Tower is actively attacking us — always retreat
+        if nEnemyTowers[1]:GetAttackTarget() == bot then
+            return 0.9
+        end
+
+        -- Solo near enemy tower without pushing allies — back off
+        local nNearbyAllies = J.GetAlliesNearLoc(bot:GetLocation(), 1200)
+        if #nNearbyAllies <= 1 and not J.IsPushing(bot) then
+            if bot.lastTowerSoloChat == nil or DotaTime() - bot.lastTowerSoloChat > 15 then
+                bot:ActionImmediate_Chat("Backing off: solo near enemy tower", false)
+                bot.lastTowerSoloChat = DotaTime()
+            end
+            return 0.85
+        end
+
+        -- Going on someone near tower but can't finish the kill
+        if not J.IsPushing(bot) and J.IsGoingOnSomeone(bot) then
             if J.IsValidHero(botTarget)
                 and not J.IsSuspiciousIllusion(botTarget)
                 and not botTarget:HasModifier('modifier_dazzle_shallow_grave')
@@ -477,10 +493,6 @@ function X.RetreatWhenTowerTargetedDesire()
                     return 0.9
                 end
             end
-        end
-
-        if nEnemyTowers[1]:GetAttackTarget() == bot then
-            return 0.9
         end
     end
 
